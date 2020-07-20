@@ -5,6 +5,7 @@ from flask_cors import CORS
 import random
 
 from models import setup_db, Question, Category
+from utils import paginate_result, format_result
 
 QUESTIONS_PER_PAGE = 10
 
@@ -27,26 +28,37 @@ def create_app(test_config=None):
       'success': 'true'
     }), 200
 
+  @app.route('/categories', methods=['GET'])
+  def get_all_categories():
+    categories = Category.query.all()
+    paginated_result = paginate_result(request, format_result(categories))
+    response = {
+      'categories': paginated_result,
+      'success': True
+    }
+    return jsonify(response)
+
   '''
   @TODO: 
-  Create an endpoint to handle GET requests 
-  for all available categories.
-  '''
-
-
-  '''
-  @TODO: 
-  Create an endpoint to handle GET requests for questions, 
-  including pagination (every 10 questions). 
-  This endpoint should return a list of questions, 
-  number of total questions, current category, categories. 
-
   TEST: At this point, when you start the application
   you should see questions and categories generated,
   ten questions per page and pagination at the bottom of the screen for three pages.
   Clicking on the page numbers should update the questions. 
   '''
-
+  @app.route('/questions/<string:category>', methods=['GET'])
+  def get_questions(category):
+    categories = Category.query.all()
+    questions = Question.query.filter(Question.category==category).all()
+    paginated_result = paginate_result(request, format_result(questions))
+    response = {
+      'success': True,
+      'questions': paginated_result,
+      'total_questions': len(questions),
+      'category': category,
+      'categories': format_result(categories)
+    }
+    return jsonify(response)
+  
   '''
   @TODO: 
   Create an endpoint to DELETE question using a question ID. 
@@ -54,7 +66,7 @@ def create_app(test_config=None):
   TEST: When you click the trash icon next to a question, the question will be removed.
   This removal will persist in the database and when you refresh the page. 
   '''
-
+  
   '''
   @TODO: 
   Create an endpoint to POST a new question, 
