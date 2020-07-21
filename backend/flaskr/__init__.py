@@ -5,7 +5,7 @@ from flask_cors import CORS
 import random
 
 from models import setup_db, Question, Category
-from utils import paginate_result, format_result
+from utils import paginate_result, format_questions, format_categories
 
 QUESTIONS_PER_PAGE = 10
 
@@ -31,31 +31,23 @@ def create_app(test_config=None):
   @app.route('/categories', methods=['GET'])
   def get_all_categories():
     categories = Category.query.all()
-    paginated_result = paginate_result(request, format_result(categories))
     response = {
-      'categories': paginated_result,
+      'categories': format_categories(categories),
       'success': True
     }
     return jsonify(response)
 
-  '''
-  @TODO: 
-  TEST: At this point, when you start the application
-  you should see questions and categories generated,
-  ten questions per page and pagination at the bottom of the screen for three pages.
-  Clicking on the page numbers should update the questions. 
-  '''
-  @app.route('/questions/<string:category>', methods=['GET'])
-  def get_questions(category):
+  @app.route('/questions', methods=['GET'])
+  def get_all_questions():
+    questions = Question.query.all()
     categories = Category.query.all()
-    questions = Question.query.filter(Question.category==category).all()
-    paginated_result = paginate_result(request, format_result(questions))
+    paginated_result = paginate_result(request, format_questions(questions), QUESTIONS_PER_PAGE)
     response = {
       'success': True,
       'questions': paginated_result,
       'total_questions': len(questions),
-      'category': category,
-      'categories': format_result(categories)
+      'categories': format_categories(categories),
+      'current_category': categories[0].format()
     }
     return jsonify(response)
   
@@ -97,6 +89,19 @@ def create_app(test_config=None):
   categories in the left column will cause only questions of that 
   category to be shown. 
   '''
+  @app.route('/categories/<int:id>/questions', methods=['GET'])
+  def get_questions_by_category(id):
+    categories = Category.query.all()
+    selected_category = Category.query.filter(Category.id == id).one_or_none()
+    questions = Question.query.filter(Question.category == selected_category.id).all()
+    paginated_result = paginate_result(request, format_questions(questions))
+    response = {
+      'success': True,
+      'questions': paginated_result,
+      'total_questions': len(questions),
+      'current_category': selected_category.format()
+    }
+    return jsonify(response)
 
 
   '''
