@@ -52,43 +52,101 @@ Setting the `FLASK_ENV` variable to `development` will detect file changes and r
 
 Setting the `FLASK_APP` variable to `flaskr` directs flask to use the `flaskr` directory and the `__init__.py` file to find the application. 
 
-## Tasks
 
-One note before you delve into your tasks: for each endpoint you are expected to define the endpoint and response data. The frontend will be a plentiful resource because it is set up to expect certain endpoints and response data formats already. You should feel free to specify endpoints in your own way; if you do so, make sure to update the frontend or you will get some unexpected behavior. 
+## Documentation
 
-1. Use Flask-CORS to enable cross-domain requests and set response headers. 
-2. Create an endpoint to handle GET requests for questions, including pagination (every 10 questions). This endpoint should return a list of questions, number of total questions, current category, categories. 
-3. Create an endpoint to handle GET requests for all available categories. 
-4. Create an endpoint to DELETE question using a question ID. 
-5. Create an endpoint to POST a new question, which will require the question and answer text, category, and difficulty score. 
-6. Create a POST endpoint to get questions based on category. 
-7. Create a POST endpoint to get questions based on a search term. It should return any questions for whom the search term is a substring of the question. 
-8. Create a POST endpoint to get questions to play the quiz. This endpoint should take category and previous question parameters and return a random questions within the given category, if provided, and that is not one of the previous questions. 
-9. Create error handlers for all expected errors including 400, 404, 422 and 500. 
+### Endpoints
+All endpoints are behind static prefix ```/api``` to avoid any conflicts with localhosts
 
-REVIEW_COMMENT
-```
-This README is missing documentation of your endpoints. Below is an example for your endpoint to get all categories. Please use it as a reference for creating your documentation and resubmit your code. 
+- ```GET '/api/categories'```
+- ```GET '/api/questions'```
+- ```DELETE '/api/questions/<id>'```
+- ```POST '/api/questions'```
+- ```GET '/api/categories/<id>/questions'```
+- ```POST '/api/search'```
+- ```POST '/api/quizzes'```
 
-Endpoints
-GET '/categories'
-GET ...
-POST ...
-DELETE ...
+All endpoints returns ```success``` boolean key in response which indicates if the operation has completed successfuly. 
 
-GET '/categories'
+**GET '/categories'**
 - Fetches a dictionary of categories in which the keys are the ids and the value is the corresponding string of the category
 - Request Arguments: None
 - Returns: An object with a single key, categories, that contains a object of id: category_string key:value pairs. 
-{'1' : "Science",
-'2' : "Art",
-'3' : "Geography",
-'4' : "History",
-'5' : "Entertainment",
-'6' : "Sports"}
+    ```
+    {'1' : "Science",
+    '2' : "Art",
+    '3' : "Geography",
+    '4' : "History",
+    '5' : "Entertainment",
+    '6' : "Sports"}
+    ```
 
-```
+**GET '/api/questions?page=<page_number>'**
+- Fetches a list of all questions, paginated for optimizations 10 questions per page
+- Request Arguments:
+    - page_number: The corresponding page number
+- Returns:
+    - A list of questions, maximum 10 per request. 
+    ```
+    [ {
+        'id': number,
+        'category: number,
+        'question': string,
+        'answer': string,
+        'difficulty': number
+    },]
+    ```
+    - Total number of questions.
+    - An object containing categories.
 
+**DELETE '/api/questions/<id>'**
+- Deletes the question with the specific ID
+- Request Arguments:
+    - id: The corresponding id of the question to be deleted
+- Returns:
+    - An instance of the question if successful along with status code 200.
+    - Returns an error message if the operation wasn't successful along with status code of the error.
+
+**POST '/api/questions'**
+- Create a new question
+- Request Arguments:
+    - question: question text
+    - answer: answer text
+    - difficulty: difficulty value where larger is harder
+    - category: the id of the category
+- Returns:
+    - An instance of the question if successful along with status code 200.
+    - Returns an error message if the operation wasn't successful along with status code of the error.
+
+**GET '/api/categories/< id >/questions?page=< page_number >'**
+- Fetches a list of questions with a specific category, paginated for optimizations 10 questions per page
+- Request Arguments:
+    - id: ID of the category
+    - page_number: The corresponding page number
+- Returns:
+    - A list of questions, maximum 10 per request. 
+    - Total number of questions.
+    - An object containing categories.
+
+**POST '/api/search?page=< page_number >'**
+- Fetches a list of questions which matches a search term, paginated for optimizations 10 questions per page
+- Request Arguments:
+    - searchTerm: Search term
+    - page_number: The corresponding page number
+- Returns:
+    - A list of questions, maximum 10 per request. 
+    - Total number of questions.
+    - An object containing categories.
+
+**POST '/api/quizzes'**
+- Fetches a random question not present within the previously asked questions
+- Request Arguments:
+    - previous_questions: a list of integers representing the IDs of the previously asked questions
+    - category: a category object
+    ```
+        { 'id': number, 'type': string }
+    ```
+- Returns: A unique and random question within the specific category
 
 ## Testing
 To run the tests, run
