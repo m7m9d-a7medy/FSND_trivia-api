@@ -33,3 +33,33 @@ def format_categories(category_list: list) -> dict:
     for (key, value) in keyed_object.items():
         output_object[key] = value.type
     return output_object
+
+
+def is_valid_question(request_data: dict) -> bool:
+    return (
+        request_data['question']
+        and request_data['answer']
+        and request_data['difficulty']
+        and request_data['category']
+    )
+
+
+def is_valid_search(request_data: dict) -> bool:
+    return (
+        request_data['searchTerm']
+    )
+
+
+def is_valid_quiz(request_data: dict) -> bool:
+    if (
+        isinstance(request_data['previous_questions'], list)
+        and request_data['quiz_category']
+    ):
+        print('found')
+        if (
+            request_data['quiz_category']['id']
+            and request_data['quiz_category']['type']
+        ):
+            return True
+    else:
+        return False

@@ -1,12 +1,24 @@
 import os
 from flask import Flask, request, abort, jsonify, Response, abort
+from werkzeug.exceptions import (
+    BadRequest,
+    NotFound,
+    InternalServerError
+)
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import random
 import json
 
 from models import setup_db, Question, Category
-from utils import paginate_result, format_questions, format_categories
+from utils import (
+    paginate_result,
+    format_questions,
+    format_categories,
+    is_valid_question,
+    is_valid_search,
+    is_valid_quiz
+)
 
 QUESTIONS_PER_PAGE = 10
 
@@ -61,42 +73,67 @@ def create_app(test_config=None):
         try:
             question_to_be_deleted = Question.query.filter(
                 Question.id == id).one_or_none()
+
+            if not question_to_be_deleted:
+                raise NotFound()
+
             question_to_be_deleted.delete()
             response = {
                 'success': True,
                 'deleted_question': question_to_be_deleted.format()
             }
             return jsonify(response)
-        except:
+        except NotFound as e:
             abort(404)
+        except Exception as e:
+            abort(500)
 
     @app.route('/api/questions', methods=['POST'])
     def create_new_question():
-        question_object = json.loads(request.data)
-        new_question = Question(**question_object)
-        new_question.insert()
-        response = {
-            'success': True,
-            'new_question': new_question.format()
-        }
-        return jsonify(response)
+        try:
+            question_object = json.loads(request.data)
+
+            if (not is_valid_question(question_object)):
+                raise BadRequest()
+
+            new_question = Question(**question_object)
+            new_question.insert()
+
+            response = {
+                'success': True,
+                'new_question': new_question.format()
+            }
+            return jsonify(response)
+        except BadRequest as e:
+            abort(400)
+        except Exception as e:
+            abort(500)
 
     @app.route('/api/search', methods=['POST'])
     def search_questions():
-        request_object = json.loads(request.data)
-        search_term = request_object['searchTerm']
+        try:
+            request_object = json.loads(request.data)
+            if (not is_valid_search(request_object)):
+                raise BadRequest()
 
-        questions = Question.query.filter(
-            Question.question.ilike(f'%{search_term}%')).all()
-        paginated_result = paginate_result(
-            request, format_questions(questions), QUESTIONS_PER_PAGE)
-        response = {
-            'success': True,
-            'questions': paginated_result,
-            'total_questions': len(questions),
-            'current_category': None
-        }
-        return jsonify(response)
+            search_term = request_object['searchTerm']
+
+            questions = Question.query.filter(
+                Question.question.ilike(f'%{search_term}%')).all()
+            paginated_result = paginate_result(
+                request, format_questions(questions), QUESTIONS_PER_PAGE)
+            response = {
+                'success': True,
+                'questions': paginated_result,
+                'total_questions': len(questions),
+                'current_category': None
+            }
+            return jsonify(response)
+
+        except BadRequest as e:
+            abort(400)
+        except Exception as e:
+            abort(500)
 
     @app.route('/api/categories/<int:id>/questions', methods=['GET'])
     def get_questions_by_category(id):
@@ -104,6 +141,10 @@ def create_app(test_config=None):
             categories = Category.query.all()
             selected_category = Category.query.filter(
                 Category.id == id).one_or_none()
+
+            if not selected_category:
+                raise NotFound()
+
             questions = Question.query.filter(
                 Question.category == selected_category.id).all()
 
@@ -116,33 +157,43 @@ def create_app(test_config=None):
                 'current_category': selected_category.format()
             }
             return jsonify(response)
-        except:
+        except NotFound as e:
             abort(404)
+        except Exception as e:
+            abort(500)
 
     @app.route('/api/quizzes', methods=['POST'])
     def generate_quiz_question():
-        request_object = json.loads(request.data)
-        previous_questions = request_object['previous_questions']
-        quiz_category = request_object['quiz_category']
-        filter_criteria = {
-            'category': Question.category == quiz_category['id'],
-            'previous_questions': Question.id.notin_(previous_questions)
-        }
+        try:
+            request_object = json.loads(request.data)
+            if (not is_valid_quiz(request_object)):
+                raise BadRequest()
 
-        questions = Question.query.filter(filter_criteria['category']) \
-            .filter(filter_criteria['previous_questions']).all()
+            previous_questions = request_object['previous_questions']
+            quiz_category = request_object['quiz_category']
+            filter_criteria = {
+                'category': Question.category == quiz_category['id'],
+                'previous_questions': Question.id.notin_(previous_questions)
+            }
 
-        if len(questions):
-            next_question = questions[random.randint(
-                0, len(questions) - 1)].format()
-        else:
-            next_question = None
+            questions = Question.query.filter(filter_criteria['category']) \
+                .filter(filter_criteria['previous_questions']).all()
 
-        response = {
-            'success': True,
-            'question': next_question
-        }
-        return jsonify(response)
+            if len(questions):
+                next_question = questions[random.randint(
+                    0, len(questions) - 1)].format()
+            else:
+                next_question = None
+
+            response = {
+                'success': True,
+                'question': next_question
+            }
+            return jsonify(response)
+        except BadRequest as e:
+            abort(400)
+        except Exception as e:
+            abort(500)
 
     @app.errorhandler(404)
     def not_found(error):
@@ -162,18 +213,18 @@ def create_app(test_config=None):
 
     @app.errorhandler(400)
     def bad_request(error):
-      return jsonify({
-        'success':False,
-        'error': 400,
-        'message':'Bad Request'
+        return jsonify({
+            'success': False,
+            'error': 400,
+            'message': 'Bad Request'
         }), 400
 
     @app.errorhandler(500)
     def server_error(error):
-      return jsonify({
-        'success':False,
-        'error': 500,
-        'message':'Internal server error'
+        return jsonify({
+            'success': False,
+            'error': 500,
+            'message': 'Internal server error'
         }), 500
 
     return app
