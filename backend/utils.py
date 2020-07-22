@@ -37,28 +37,28 @@ def format_categories(category_list: list) -> dict:
 
 def is_valid_question(request_data: dict) -> bool:
     return (
-        request_data['question']
-        and request_data['answer']
-        and request_data['difficulty']
-        and request_data['category']
+        request_data.get('question', None)
+        and request_data.get('answer', None)
+        and request_data.get('difficulty', None)
+        and request_data.get('category', None)
     )
 
 
 def is_valid_search(request_data: dict) -> bool:
     return (
-        request_data['searchTerm']
+        request_data.get('searchTerm', None)
     )
 
 
 def is_valid_quiz(request_data: dict) -> bool:
     if (
-        isinstance(request_data['previous_questions'], list)
-        and request_data['quiz_category']
+        request_data.get('previous_questions', None)
+        and isinstance(request_data['previous_questions'], list)
+        and request_data.get('quiz_category')
     ):
-        print('found')
         if (
-            request_data['quiz_category']['id']
-            and request_data['quiz_category']['type']
+            request_data['quiz_category'].get('id', None)
+            and request_data['quiz_category'].get('type', None)
         ):
             return True
     else:

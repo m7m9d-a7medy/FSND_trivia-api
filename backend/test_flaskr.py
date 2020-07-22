@@ -53,18 +53,25 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['current_category'], None)
 
     def test_delete_question(self):
-        random_id = random.randint(1, 10)
-        res = self.client().delete(f'/api/questions/{random_id}')
+        mock_id = 5
+        res = self.client().delete(f'/api/questions/{mock_id}')
         data = json.loads(res.data)
 
-        if res.status_code == 200:
-            self.assertTrue(data['success'])
-            self.assertTrue(data['deleted_question'])
-        elif res.status_code == 404:
-            self.assertFalse(data['success'])
-            self.assertTrue(data['message'])
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(data['success'])
+        self.assertTrue(data['deleted_question'])
 
-    def test_creat_new_question(self):
+    def test_delete_question_404(self):
+        mock_id = 100
+        res = self.client().delete(f'/api/questions/{mock_id}')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['error'], 404)
+        self.assertFalse(data['success'])
+        self.assertTrue(data['message'])
+
+    def test_create_new_question(self):
         mock_question = {
             'question': f'test question {random.randint(0, 1000)}',
             'answer': f'test answer {random.randint(0, 1000)}',
@@ -76,6 +83,18 @@ class TriviaTestCase(unittest.TestCase):
 
         self.assertEqual(res.status_code, 200)
         self.assertTrue(data['new_question'])
+
+    def test_create_new_question_400(self):
+        mock_question = {
+            'mock_field': 'mock'
+        }
+        res = self.client().post('/api/questions', data=json.dumps(mock_question))
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(data['error'], 400)
+        self.assertFalse(data['success'])
+        self.assertTrue(data['message'])
 
     def test_search_questions(self):
         res = self.client().post(
@@ -90,23 +109,32 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['current_category'], None)
 
     def test_get_questions_by_category(self):
-        random_id = random.randint(1, 10)
+        random_id = random.randint(1, 5)
         res = self.client().get(f'/api/categories/{random_id}/questions')
         data = json.loads(res.data)
 
-        if res.status_code == 200:
-            self.assertTrue(data['success'])
-            self.assertGreaterEqual(len(data['questions']), 0)
-            self.assertLessEqual(len(data['questions']), QUESTIONS_PER_PAGE)
-            self.assertGreaterEqual(data['total_questions'], 0)
-            self.assertTrue(data['current_category'])
-        elif res.status_code == 404:
-            self.assertFalse(data['success'])
-            self.assertTrue(data['message'])
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(data['success'])
+        self.assertGreaterEqual(len(data['questions']), 0)
+        self.assertLessEqual(len(data['questions']), QUESTIONS_PER_PAGE)
+        self.assertGreaterEqual(data['total_questions'], 0)
+        self.assertTrue(data['current_category'])
+
+    def test_get_questions_by_category(self):
+        mock_id = 100
+        res = self.client().get(f'/api/categories/{mock_id}/questions')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['error'], 404)
+        self.assertFalse(data['success'])
+        self.assertTrue(data['message'])
 
     def test_generate_quiz_question(self):
+        previous_questions = [random.randint(
+            0, 15) for x in range(random.randint(0, 5))]
         request_data = {
-            'previous_questions': [random.randint(0, 15) for x in range(random.randint(0, 5))],
+            'previous_questions': previous_questions,
             'quiz_category': {
                 'id': random.randint(1, 5),
                 'type': 'test type'
@@ -118,6 +146,18 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertTrue(data['success'])
         assert type(data['question']) is (None or dict)
+
+    def test_generate_quiz_question_400(self):
+        mock_request_data = {
+            'mock_field': 'mock'
+        }
+        res = self.client().post('/api/quizzes', data=json.dumps(mock_request_data))
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(data['error'], 400)
+        self.assertFalse(data['success'])
+        self.assertTrue(data['message'])
 
 
 # Make the tests conveniently executable

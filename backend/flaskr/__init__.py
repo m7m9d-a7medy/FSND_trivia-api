@@ -132,8 +132,6 @@ def create_app(test_config=None):
 
         except BadRequest as e:
             abort(400)
-        except Exception as e:
-            abort(500)
 
     @app.route('/api/categories/<int:id>/questions', methods=['GET'])
     def get_questions_by_category(id):
@@ -159,8 +157,6 @@ def create_app(test_config=None):
             return jsonify(response)
         except NotFound as e:
             abort(404)
-        except Exception as e:
-            abort(500)
 
     @app.route('/api/quizzes', methods=['POST'])
     def generate_quiz_question():
@@ -192,8 +188,6 @@ def create_app(test_config=None):
             return jsonify(response)
         except BadRequest as e:
             abort(400)
-        except Exception as e:
-            abort(500)
 
     @app.errorhandler(404)
     def not_found(error):
