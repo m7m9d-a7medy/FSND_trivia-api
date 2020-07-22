@@ -8,6 +8,7 @@ from flaskr import create_app
 from models import setup_db, Question, Category
 from flaskr import QUESTIONS_PER_PAGE
 
+
 class TriviaTestCase(unittest.TestCase):
     """This class represents the trivia test case"""
 
@@ -16,7 +17,8 @@ class TriviaTestCase(unittest.TestCase):
         self.app = create_app()
         self.client = self.app.test_client
         self.database_name = "trivia_test"
-        self.database_path = "postgres://{}@{}/{}".format('postgres:postgres', 'localhost:5432', self.database_name)
+        self.database_path = "postgres://{}@{}/{}".format(
+            'postgres:postgres', 'localhost:5432', self.database_name)
         setup_db(self.app, self.database_path)
 
         # binds the app to the current context
@@ -25,7 +27,7 @@ class TriviaTestCase(unittest.TestCase):
             self.db.init_app(self.app)
             # create all tables
             self.db.create_all()
-    
+
     def tearDown(self):
         """Executed after reach test"""
         pass
@@ -49,7 +51,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertLessEqual(len(data['questions']), QUESTIONS_PER_PAGE)
         self.assertGreaterEqual(data['total_questions'], 0)
         self.assertEqual(data['current_category'], None)
-    
+
     def test_delete_question(self):
         random_id = random.randint(1, 10)
         res = self.client().delete(f'/api/questions/{random_id}')
@@ -76,7 +78,8 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data['new_question'])
 
     def test_search_questions(self):
-        res = self.client().post('/api/search', data=json.dumps({'searchTerm': 'test'}))
+        res = self.client().post(
+            '/api/search', data=json.dumps({'searchTerm': 'test'}))
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code, 200)
@@ -115,6 +118,8 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertTrue(data['success'])
         assert type(data['question']) is (None or dict)
+
+
 # Make the tests conveniently executable
 if __name__ == "__main__":
     unittest.main()
